@@ -64,7 +64,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>pthreadVC2-static-mtdll-debug.lib;jpeg9-static-mtdll-debug.lib;libpng163-static-mtdll-debug.lib;zlib128-static-mtdll-debug.lib;pHash.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\Debug;..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\pHash\Debug;..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
