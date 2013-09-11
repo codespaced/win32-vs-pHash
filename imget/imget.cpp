@@ -44,6 +44,8 @@ extern "C" {
 #define MVP_PATHLENGTH   5
 #define MVP_LEAFCAP     25
 
+typedef int(*HashFunc)(const char* file, ulong64 &hash);
+
 static uint64_t nbcalcs = 0;
 
 float hamming_distance(MVPDP* pointA, MVPDP* pointB)
@@ -53,7 +55,7 @@ float hamming_distance(MVPDP* pointA, MVPDP* pointB)
     uint64_t a = *((uint64_t*)pointA->data);
     uint64_t b = *((uint64_t*)pointB->data);
     uint64_t x = a ^ b;
-
+    
     const uint64_t m1  = 0x5555555555555555ULL;
     const uint64_t m2  = 0x3333333333333333ULL;
     const uint64_t h01 = 0x0101010101010101ULL;
@@ -89,6 +91,7 @@ int main(int argc, char* argv[])
     const char* dirname  = (argc > 3) ? argv[3] : "None";
     const float radius   = (argc > 4) ? atof(argv[4]) : 21.0;
     const int knearest = (argc > 5) ? atoi(argv[5]) : 5;
+    const int blur = (argc > 6) ? atoi(argv[6]) : NULL;
     
     printf("command   - %s\
             \nfilename  - %s\
@@ -126,8 +129,14 @@ int main(int argc, char* argv[])
         int count = 0;
         uint64_t hashvalue;
 
+        clock_t begin, end;
+        double time_spent;
+
+        HashFunc hashfunction = (blur == NULL) ? ph_dct_imagehash_no_blur : ph_dct_imagehash;
+
+        begin = clock();
         for(int i = 0; i < nbfiles; i++) {
-            if(ph_dct_imagehash(files[i], hashvalue) < 0) {
+            if(hashfunction(files[i], hashvalue) < 0) {
                 printf("Unable to get hash value for %s.\n", files[i]);
                 continue;
             }
@@ -143,7 +152,11 @@ int main(int argc, char* argv[])
             count++;
         }
 
+        end = clock();
+        time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
         printf("\n");
+        printf("Time: %.2f\n", time_spent);
 
         if(!strncasecmp(command, "add", 3)) {
             //printf("\nAdding %d hashes to tree.\n", count);
