@@ -463,6 +463,123 @@ int __cdecl ph_dct_imagehash(const char* file, ulong64 &hash)
     return 0;
 }
 
+int __cdecl ph_dct_imagehash_no_blur(const char* file, ulong64 &hash)
+{
+
+    if(!file) {
+        return -1;
+    }
+
+    CImg<uint8_t> src;
+
+    try {
+        src.load(file);
+    }
+    catch(CImgIOException ex) {
+        return -1;
+    }
+
+//    CImg<float> meanfilter(7, 7, 1, 1, 1);
+    CImg<float> img;
+
+    if(src.spectrum() == 3) {
+        img = src.RGBtoYCbCr().channel(0); //.get_convolve(meanfilter);
+    }
+    else if(src.spectrum() == 4) {
+        int width = img.width();
+        int height = img.height();
+        int depth = img.depth();
+        img = src.crop(0, 0, 0, 0, width - 1, height - 1, depth - 1, 2).RGBtoYCbCr().channel(0); //.get_convolve(meanfilter);
+    }
+    else {
+        img = src.channel(0); //.get_convolve(meanfilter);
+    }
+
+    img.resize(32, 32);
+    CImg<float>* C  = ph_dct_matrix(32);
+    CImg<float> Ctransp = C->get_transpose();
+
+    CImg<float> dctImage = (*C) * img * Ctransp;
+
+    CImg<float> subsec = dctImage.crop(1, 1, 8, 8).unroll('x');;
+
+    float median = subsec.median();
+    ulong64 one = 0x0000000000000001;
+    hash = 0x0000000000000000;
+
+    for(int i = 0; i < 64; i++) {
+        float current = subsec(i);
+
+        if(current > median)
+            hash |= one;
+
+        one = one << 1;
+    }
+
+    delete C;
+
+    return 0;
+}
+
+int __cdecl ph_average_imagehash(const char* file, ulong64 &hash)
+{
+
+    if(!file) {
+        return -1;
+    }
+
+    CImg<uint8_t> src;
+
+    try {
+        src.load(file);
+    }
+    catch(CImgIOException ex) {
+        return -1;
+    }
+
+    CImg<float> img;
+
+    if(src.spectrum() == 3) {
+        img = src.RGBtoYCbCr().channel(0);
+    }
+    else if(src.spectrum() == 4) {
+        int width = img.width();
+        int height = img.height();
+        int depth = img.depth();
+        img = src.crop(0, 0, 0, 0, width - 1, height - 1, depth - 1, 2).RGBtoYCbCr().channel(0);
+    }
+    else {
+        img = src.channel(0);
+    }
+
+    img.resize(32, 32);
+    CImg<float>* C  = ph_dct_matrix(32);
+    CImg<float> Ctransp = C->get_transpose();
+
+    CImg<float> dctImage = (*C) * img * Ctransp;
+
+    CImg<float> subsec = dctImage.crop(1, 1, 8, 8).unroll('x');;
+
+    float median = subsec.median();
+    ulong64 one = 0x0000000000000001;
+    hash = 0x0000000000000000;
+
+    for(int i = 0; i < 64; i++) {
+        float current = subsec(i);
+
+        if(current > median)
+            hash |= one;
+
+        one = one << 1;
+    }
+
+    delete C;
+
+    return 0;
+}
+
+
+
 #ifdef HAVE_PTHREAD
 void* ph_image_thread(void* p)
 {
